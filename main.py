@@ -131,7 +131,7 @@ def scrape_report(embed_url: str, to_firebase: bool = True, to_csv: bool = False
 def _export_csv(visual_name: str, rows: list[dict]):
     import pandas as pd
 
-    os.makedirs(OUTPUT_DIR, mode=0o777, exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     safe_name = visual_name.replace("/", "_").replace(" ", "_")[:100]
     path = os.path.join(OUTPUT_DIR, f"{safe_name}.csv")
     df = pd.DataFrame(rows)
