@@ -1,0 +1,10 @@
+services:
+  scraper:
+    build: .
+    container_name: lbresponse-scraper
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./output:/app/output
+      - ${FIREBASE_CRED_FILE:?Set FIREBASE_CRED_FILE in .env}:/app/firebase-cred.json:ro
+    command: ["python", "main.py", "--csv", "schedule", "--interval", "${SCHEDULE_INTERVAL_HOURS:-6}"]

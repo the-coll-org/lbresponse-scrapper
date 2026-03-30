@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.git/
+.github/
+output/
+*.csv
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.env
+*.md
+.pre-commit-config.yaml
+pyproject.toml
+tests/

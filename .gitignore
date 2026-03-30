@@ -1,0 +1,38 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Environment — contains secrets, never commit
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+env/
+
+# Credentials — NEVER commit service account keys
+*-adminsdk-*.json
+*-firebase-*.json
+*credentials*.json
+*serviceaccount*.json
+*.pem
+*.key
+
+# Output
+output/
+*.csv
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Type checking / linting cache
+.mypy_cache/
+.ruff_cache/
