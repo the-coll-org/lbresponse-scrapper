@@ -67,4 +67,47 @@ jobs:
         run: pip install bandit[toml]
 
       - name: Bandit security scan
-        run: bandit -r scraper/ main.py config.py -c pyproject.toml || true
+        run: bandit -r scraper/ main.py config.py -c pyproject.toml
+
+  secrets:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for private keys in tracked files
+        run: |
+          echo "Scanning for private keys..."
+          PK_PATTERN="BEGIN "
+          PK_PATTERN="${PK_PATTERN}PRIVATE KEY"
+          if git ls-files -z | xargs -0 grep -l "$PK_PATTERN" 2>/dev/null; then
+            echo "::error::Private key found in tracked files!"
+            exit 1
+          fi
+          echo "No private keys found."
+
+      - name: Check for common credential patterns
+        run: |
+          echo "Scanning for credential patterns..."
+          FOUND=0
+          SA_PATTERN='"type": "service_'
+          SA_PATTERN="${SA_PATTERN}account"'
+          if git ls-files -z | xargs -0 grep -l "$SA_PATTERN" 2>/dev/null; then
+            echo "::error::Firebase/GCP service account JSON found in tracked files!"
+            FOUND=1
+          fi
+          if git ls-files -z | xargs -0 grep -lE 'AKIA[0-9A-Z]{16}' 2>/dev/null; then
+            echo "::error::AWS access key found in tracked files!"
+            FOUND=1
+          fi
+          if [ "$FOUND" -eq 1 ]; then
+            exit 1
+          fi
+          echo "No credential patterns found."
