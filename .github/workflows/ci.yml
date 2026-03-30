@@ -104,7 +104,7 @@ jobs:
           echo "Scanning for credential patterns..."
           FOUND=0
           SA_PATTERN='"type": "service_'
-          SA_PATTERN="${SA_PATTERN}account"'
+          SA_PATTERN="${SA_PATTERN}account\""
           if git ls-files -z | xargs -0 grep -l "$SA_PATTERN" 2>/dev/null; then
             echo "::error::Firebase/GCP service account JSON found in tracked files!"
             FOUND=1
