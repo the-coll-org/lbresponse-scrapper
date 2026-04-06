@@ -56,7 +56,7 @@ def store_visual_data(
 
     cleaned_rows = []
     for row in rows:
-        cleaned = {k: _clean_value(v) for k, v in row.items()}
+        cleaned = {_sanitize_key(k): _clean_value(v) for k, v in row.items()}
         cleaned["_scraped_at"] = now
         cleaned_rows.append(cleaned)
 
