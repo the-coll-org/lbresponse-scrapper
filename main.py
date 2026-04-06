@@ -15,6 +15,7 @@ from config import (
     SCHEDULE_INTERVAL_HOURS,
 )
 from scraper.api_client import PowerBIClient
+from scraper.data_processor import process_visual_data
 from scraper.dsr_parser import extract_select_names, parse_dsr_response
 from scraper.embed_url import parse_embed_url, resolve_cluster_url
 from scraper.firebase_store import clear_visual_data, store_visual_data
@@ -28,7 +29,7 @@ logging.basicConfig(
 log = logging.getLogger("powerbi-scraper")
 
 
-def scrape_report(embed_url: str, to_firebase: bool = True, to_csv: bool = False):
+def scrape_report(embed_url: str, to_firebase: bool = True, to_csv: bool = False, to_database: bool = True):
     """Run a full scrape of the Power BI report."""
     log.info("Starting scrape of %s", embed_url)
 
@@ -120,6 +121,25 @@ def scrape_report(embed_url: str, to_firebase: bool = True, to_csv: bool = False
             except Exception:
                 log.exception("  Failed to store in Firebase for %s", visual_name)
 
+        if to_database:
+            try:
+                result = process_visual_data(
+                    visual_name=visual_name,
+                    rows=all_rows,
+                    entities=visual["entities"],
+                    to_database=True,
+                )
+                storage_summary = ", ".join(
+                    f"{count} {etype}s" for etype, count in result["stored"].items()
+                )
+                if storage_summary:
+                    log.info("  Stored to database: %s", storage_summary)
+                if result["errors"]:
+                    for error in result["errors"]:
+                        log.warning("  %s", error)
+            except Exception:
+                log.exception("  Failed to store in database for %s", visual_name)
+
     log.info(
         "Scrape complete. Total rows across all visuals: %d at %s",
         total_rows,
@@ -144,6 +164,7 @@ def run_once(args):
         embed_url=args.url,
         to_firebase=not args.no_firebase,
         to_csv=args.csv,
+        to_database=not args.no_database,
     )
 
 
@@ -156,6 +177,7 @@ def run_scheduled(args):
                 embed_url=args.url,
                 to_firebase=not args.no_firebase,
                 to_csv=args.csv,
+                to_database=not args.no_database,
             )
         except Exception:
             log.exception("Scrape failed")
@@ -180,6 +202,7 @@ def main():
     )
     parser.add_argument("--csv", action="store_true", help="Also export to CSV")
     parser.add_argument("--no-firebase", action="store_true", help="Skip Firebase storage")
+    parser.add_argument("--no-database", action="store_true", help="Skip database storage")
 
     sub = parser.add_subparsers(dest="command")
 

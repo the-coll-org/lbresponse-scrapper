@@ -17,6 +17,11 @@ FIREBASE_CRED_PATH = os.getenv("FIREBASE_CRED_PATH", "")
 FIREBASE_DB_URL = os.getenv("FIREBASE_DB_URL", "")
 FIREBASE_COLLECTION = "powerbi_data"
 
+# Database — supports PostgreSQL, MySQL, SQLite, etc.
+# Example: postgresql://user:password@localhost/lbresponse
+# For SQLite: sqlite:///./lbresponse.db
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./lbresponse.db")
+
 SCHEDULE_INTERVAL_HOURS = int(os.getenv("SCHEDULE_INTERVAL_HOURS", "6"))
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
