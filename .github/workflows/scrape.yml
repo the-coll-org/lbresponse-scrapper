@@ -1,0 +1,30 @@
+name: Scrape
+
+on:
+  schedule:
+    # Every 6 hours
+    - cron: "0 */6 * * *"
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  scrape:
+    name: Run Scraper
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        env:
+          FIREBASE_CRED_PATH: /tmp/firebase-cred.json
+          FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+        run: |
+          echo '${{ secrets.FIREBASE_CRED_JSON }}' > /tmp/firebase-cred.json
+          python3 main.py once --no-database
+          rm /tmp/firebase-cred.json
