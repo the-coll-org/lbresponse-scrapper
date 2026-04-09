@@ -26,5 +26,5 @@ jobs:
           FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
         run: |
           echo '${{ secrets.FIREBASE_CRED_JSON }}' > /tmp/firebase-cred.json
-          python3 main.py once --no-database
+          python3 main.py --no-database once
           rm /tmp/firebase-cred.json
