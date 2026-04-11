@@ -1,6 +1,7 @@
 """Process and store scraped Power BI data into structured database format."""
 
 import logging
+from typing import Any
 
 from scraper import data_transformer, database_store
 
@@ -12,7 +13,7 @@ def process_visual_data(
     rows: list[dict],
     entities: set[str],
     to_database: bool = True,
-) -> dict:
+) -> dict[str, Any]:
     """Process scraped visual data and store to database.
 
     Args:
@@ -24,12 +25,14 @@ def process_visual_data(
     Returns:
         Dictionary with processing results
     """
-    results = {
+    stored: dict[str, int] = {}
+    errors: list[str] = []
+    results: dict[str, Any] = {
         "visual_name": visual_name,
         "total_rows": len(rows),
         "entities": list(entities),
-        "stored": {},
-        "errors": [],
+        "stored": stored,
+        "errors": errors,
     }
 
     if not to_database or not rows:
@@ -50,11 +53,11 @@ def process_visual_data(
     for entity_type in identified_entities:
         try:
             count = _process_entity_type(entity_type, rows)
-            results["stored"][entity_type] = count
+            stored[entity_type] = count
             log.info("  Stored %d %s records", count, entity_type)
         except Exception as e:
             error_msg = f"Failed to process {entity_type}: {e!s}"
-            results["errors"].append(error_msg)
+            errors.append(error_msg)
             log.error(error_msg)
 
     return results

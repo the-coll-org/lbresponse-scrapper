@@ -5,7 +5,7 @@ from datetime import date, datetime
 from uuid import uuid4
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from config import DATABASE_URL
 from scraper.models import (
@@ -30,7 +30,7 @@ from scraper.models import (
 log = logging.getLogger(__name__)
 
 _engine = None
-_SessionLocal = None
+_SessionLocal: sessionmaker[Session] | None = None
 
 
 def _init_database():
@@ -53,9 +53,10 @@ def _init_database():
     log.info("Database initialized: %s", DATABASE_URL)
 
 
-def get_session():
+def get_session() -> Session:
     """Get a database session."""
     _init_database()
+    assert _SessionLocal is not None, "Database not initialized"
     return _SessionLocal()
 
 
