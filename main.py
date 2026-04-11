@@ -29,7 +29,12 @@ logging.basicConfig(
 log = logging.getLogger("powerbi-scraper")
 
 
-def scrape_report(embed_url: str, to_firebase: bool = True, to_csv: bool = False, to_database: bool = True):
+def scrape_report(
+    embed_url: str,
+    to_firebase: bool = True,
+    to_csv: bool = False,
+    to_database: bool = True,
+):
     """Run a full scrape of the Power BI report."""
     log.info("Starting scrape of %s", embed_url)
 

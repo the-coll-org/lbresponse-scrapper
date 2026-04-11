@@ -2,7 +2,7 @@
 
 import logging
 
-from scraper import database_store, data_transformer
+from scraper import data_transformer, database_store
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def process_visual_data(
             results["stored"][entity_type] = count
             log.info("  Stored %d %s records", count, entity_type)
         except Exception as e:
-            error_msg = f"Failed to process {entity_type}: {str(e)}"
+            error_msg = f"Failed to process {entity_type}: {e!s}"
             results["errors"].append(error_msg)
             log.error(error_msg)
 

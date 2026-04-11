@@ -20,7 +20,6 @@ from scraper.models import (
     Service,
     ServiceAvailability,
     ServiceStatus,
-    ServiceSubtype,
     Shelter,
     ShelterNeed,
     ShelterNeedStatus,
@@ -64,9 +63,11 @@ def store_provider(provider_data: dict) -> Provider:
     """Store or update a provider record."""
     session = get_session()
     try:
-        provider = session.query(Provider).filter_by(
-            provider_name=provider_data.get("provider_name")
-        ).first()
+        provider = (
+            session.query(Provider)
+            .filter_by(provider_name=provider_data.get("provider_name"))
+            .first()
+        )
 
         if provider is None:
             provider = Provider(
@@ -104,10 +105,14 @@ def store_service(service_data: dict, provider_id) -> Service:
     """Store or update a service record."""
     session = get_session()
     try:
-        service = session.query(Service).filter_by(
-            service_name=service_data.get("service_name"),
-            provider_id=provider_id,
-        ).first()
+        service = (
+            session.query(Service)
+            .filter_by(
+                service_name=service_data.get("service_name"),
+                provider_id=provider_id,
+            )
+            .first()
+        )
 
         if service is None:
             service = Service(
@@ -150,16 +155,18 @@ def store_location(location_data: dict) -> Location:
 
         # Try to find existing by city + governorate
         if location_data.get("city") and location_data.get("governorate"):
-            location = session.query(Location).filter_by(
-                city=location_data["city"],
-                governorate=location_data["governorate"],
-            ).first()
+            location = (
+                session.query(Location)
+                .filter_by(
+                    city=location_data["city"],
+                    governorate=location_data["governorate"],
+                )
+                .first()
+            )
 
         # Fallback: match by city only
         if location is None and location_data.get("city"):
-            location = session.query(Location).filter_by(
-                city=location_data["city"]
-            ).first()
+            location = session.query(Location).filter_by(city=location_data["city"]).first()
 
         if location is None:
             location = Location(
@@ -225,9 +232,9 @@ def store_shelter(shelter_data: dict, location_id) -> Shelter:
     """Store or update a shelter record."""
     session = get_session()
     try:
-        shelter = session.query(Shelter).filter_by(
-            shelter_name=shelter_data.get("shelter_name")
-        ).first()
+        shelter = (
+            session.query(Shelter).filter_by(shelter_name=shelter_data.get("shelter_name")).first()
+        )
 
         if shelter is None:
             shelter = Shelter(
@@ -248,8 +255,12 @@ def store_shelter(shelter_data: dict, location_id) -> Shelter:
             )
             session.add(shelter)
         else:
-            shelter.population_total = shelter_data.get("population_total", shelter.population_total)
-            shelter.households_count = shelter_data.get("households_count", shelter.households_count)
+            shelter.population_total = shelter_data.get(
+                "population_total", shelter.population_total
+            )
+            shelter.households_count = shelter_data.get(
+                "households_count", shelter.households_count
+            )
             shelter.women_count = shelter_data.get("women_count", shelter.women_count)
             shelter.children_count = shelter_data.get("children_count", shelter.children_count)
             shelter.elderly_count = shelter_data.get("elderly_count", shelter.elderly_count)
