@@ -134,7 +134,9 @@ class Provider(Base):
 
     provider_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     provider_name = Column(String(255), nullable=False)
-    provider_type: Mapped[ProviderType] = mapped_column(SQLEnum(ProviderType, name="provider_type_enum"), nullable=False)
+    provider_type: Mapped[ProviderType] = mapped_column(
+        SQLEnum(ProviderType, name="provider_type_enum"), nullable=False
+    )
     website = Column(String(255), nullable=True)
     contact_name = Column(String(255), nullable=False)
     contact_phone = Column(String(50), nullable=False)
@@ -157,12 +159,20 @@ class Service(Base):
     service_name = Column(String(255), nullable=False)
     service_code = Column(String(50), nullable=True)
     sector: Mapped[Sector] = mapped_column(SQLEnum(Sector, name="sector_enum"), nullable=False)
-    service_type: Mapped[ServiceSubtype | None] = mapped_column(SQLEnum(ServiceSubtype, name="service_subtype_enum"), nullable=True)
+    service_type: Mapped[ServiceSubtype | None] = mapped_column(
+        SQLEnum(ServiceSubtype, name="service_subtype_enum"), nullable=True
+    )
     description = Column(Text, nullable=True)
-    aid_type: Mapped[AidType] = mapped_column(SQLEnum(AidType, name="aid_type_enum"), nullable=False)
-    status: Mapped[ServiceStatus] = mapped_column(SQLEnum(ServiceStatus, name="service_status_enum"), nullable=False)
+    aid_type: Mapped[AidType] = mapped_column(
+        SQLEnum(AidType, name="aid_type_enum"), nullable=False
+    )
+    status: Mapped[ServiceStatus] = mapped_column(
+        SQLEnum(ServiceStatus, name="service_status_enum"), nullable=False
+    )
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Relationships
     provider = relationship("Provider", back_populates="services")
@@ -179,13 +189,17 @@ class Location(Base):
     __tablename__ = "locations"
 
     location_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    governorate: Mapped[Governorate] = mapped_column(SQLEnum(Governorate, name="governorate_enum"), nullable=False)
+    governorate: Mapped[Governorate] = mapped_column(
+        SQLEnum(Governorate, name="governorate_enum"), nullable=False
+    )
     city = Column(String(100), nullable=False)
     district = Column(String(100), nullable=True)
     locality = Column(String(255), nullable=True)
     longitude = Column(Float, nullable=True)
     latitude = Column(Float, nullable=True)
-    accessibility: Mapped[Accessibility] = mapped_column(SQLEnum(Accessibility, name="accessibility_enum"), nullable=False)
+    accessibility: Mapped[Accessibility] = mapped_column(
+        SQLEnum(Accessibility, name="accessibility_enum"), nullable=False
+    )
 
     # Relationships
     shelters = relationship("Shelter", back_populates="location", cascade="all, delete-orphan")
@@ -203,8 +217,12 @@ class ServiceAvailability(Base):
     availability_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     service_id = Column(UUID(as_uuid=True), ForeignKey("services.service_id"), nullable=False)
     location_id = Column(UUID(as_uuid=True), ForeignKey("locations.location_id"), nullable=False)
-    gender_target: Mapped[GenderTarget | None] = mapped_column(SQLEnum(GenderTarget, name="gender_target_enum"), nullable=True)
-    age_group: Mapped[AgeGroup | None] = mapped_column(SQLEnum(AgeGroup, name="age_group_enum"), nullable=True)
+    gender_target: Mapped[GenderTarget | None] = mapped_column(
+        SQLEnum(GenderTarget, name="gender_target_enum"), nullable=True
+    )
+    age_group: Mapped[AgeGroup | None] = mapped_column(
+        SQLEnum(AgeGroup, name="age_group_enum"), nullable=True
+    )
     disability_inclusion = Column(Boolean, nullable=True)
     accessibility_notes = Column(Text, nullable=True)
     capacity = Column(Integer, nullable=True)
@@ -223,7 +241,9 @@ class Shelter(Base):
 
     shelter_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     shelter_name = Column(String(255), nullable=False)
-    shelter_type: Mapped[ShelterType] = mapped_column(SQLEnum(ShelterType, name="shelter_type_enum"), nullable=False)
+    shelter_type: Mapped[ShelterType] = mapped_column(
+        SQLEnum(ShelterType, name="shelter_type_enum"), nullable=False
+    )
     location_id = Column(UUID(as_uuid=True), ForeignKey("locations.location_id"), nullable=False)
     capacity_total = Column(Integer, nullable=False)
     population_total = Column(Integer, nullable=True)
@@ -232,7 +252,9 @@ class Shelter(Base):
     children_count = Column(Integer, nullable=True)
     elderly_count = Column(Integer, nullable=True)
     pwds_count = Column(Integer, nullable=True)
-    status: Mapped[ShelterStatus] = mapped_column(SQLEnum(ShelterStatus, name="shelter_status_enum"), nullable=False)
+    status: Mapped[ShelterStatus] = mapped_column(
+        SQLEnum(ShelterStatus, name="shelter_status_enum"), nullable=False
+    )
     contact_name = Column(String(255), nullable=True)
     contact_phone = Column(String(50), nullable=True)
     last_update: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
@@ -254,11 +276,15 @@ class ShelterNeed(Base):
     shelter_id = Column(UUID(as_uuid=True), ForeignKey("shelters.shelter_id"), nullable=False)
     sector: Mapped[Sector] = mapped_column(SQLEnum(Sector, name="sector_enum"), nullable=False)
     need_type = Column(String(100), nullable=False)
-    severity: Mapped[Severity | None] = mapped_column(SQLEnum(Severity, name="severity_enum"), nullable=True)
+    severity: Mapped[Severity | None] = mapped_column(
+        SQLEnum(Severity, name="severity_enum"), nullable=True
+    )
     people_in_need = Column(Integer, nullable=True)
     description = Column(Text, nullable=True)
     reported_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    status: Mapped[ShelterNeedStatus] = mapped_column(SQLEnum(ShelterNeedStatus, name="shelter_need_status_enum"), nullable=False)
+    status: Mapped[ShelterNeedStatus] = mapped_column(
+        SQLEnum(ShelterNeedStatus, name="shelter_need_status_enum"), nullable=False
+    )
     valid_from = Column(Date, nullable=True)
     valid_to = Column(Date, nullable=True)
 
@@ -278,7 +304,9 @@ class AidMatch(Base):
     need_id = Column(UUID(as_uuid=True), ForeignKey("shelter_needs.need_id"), nullable=False)
     provider_id = Column(UUID(as_uuid=True), ForeignKey("providers.provider_id"), nullable=True)
     quantity_provided = Column(Integer, nullable=True)
-    status: Mapped[AidMatchStatus] = mapped_column(SQLEnum(AidMatchStatus, name="aid_match_status_enum"), nullable=False)
+    status: Mapped[AidMatchStatus] = mapped_column(
+        SQLEnum(AidMatchStatus, name="aid_match_status_enum"), nullable=False
+    )
     date = Column(Date, nullable=False)
     verified_by = Column(String(100), nullable=True)
 
