@@ -75,6 +75,60 @@ def clear_visual_data(visual_name: str):
     log.info("Cleared data for visual '%s'", visual_name)
 
 
+def mirror_entities(snapshot: dict[str, dict]) -> dict[str, int]:
+    """Mirror the normalized ER snapshot to Firebase under `entities/` and `categories/`.
+
+    Expected snapshot shape:
+      {
+        "providers":   {provider_id: {...}, ...},
+        "services":    {...},
+        "locations":   {...},
+        "service_availability": {...},
+        "shelters":    {...},
+        "shelter_needs": {...},
+        "aid_matches": {...},
+        "categories":  {category_type: {key: {...}, ...}, ...},
+      }
+    """
+    _init()
+    now = datetime.now(UTC).isoformat()
+    counts: dict[str, int] = {}
+
+    entities_root = rtdb.reference("entities")
+    for entity_type, records in snapshot.items():
+        if entity_type == "categories":
+            continue
+        cleaned = {
+            _sanitize_key(rid): {_sanitize_key(k): _clean_value(v) for k, v in rec.items()}
+            for rid, rec in records.items()
+        }
+        entities_root.child(entity_type).set(cleaned)
+        counts[entity_type] = len(cleaned)
+
+    categories = snapshot.get("categories", {})
+    if categories:
+        cat_ref = rtdb.reference("categories")
+        cleaned_cats = {
+            _sanitize_key(ctype): {
+                _sanitize_key(key): {k: _clean_value(v) for k, v in rec.items()}
+                for key, rec in entries.items()
+            }
+            for ctype, entries in categories.items()
+        }
+        cat_ref.set(cleaned_cats)
+        counts["categories"] = sum(len(v) for v in cleaned_cats.values())
+
+    rtdb.reference("entities_metadata").set(
+        {
+            "last_mirrored": now,
+            "counts": counts,
+        }
+    )
+
+    log.info("Mirrored ER snapshot to Firebase: %s", counts)
+    return counts
+
+
 def _sanitize_key(name: str) -> str:
     """Firebase RTDB keys cannot contain . $ # [ ] /"""
     for ch in ".$/[]#":

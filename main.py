@@ -16,9 +16,10 @@ from config import (
 )
 from scraper.api_client import PowerBIClient
 from scraper.data_processor import process_visual_data
+from scraper.database_store import export_entities_snapshot
 from scraper.dsr_parser import extract_select_names, parse_dsr_response
 from scraper.embed_url import parse_embed_url, resolve_cluster_url
-from scraper.firebase_store import clear_visual_data, store_visual_data
+from scraper.firebase_store import clear_visual_data, mirror_entities, store_visual_data
 from scraper.query_builder import build_query_payload
 from scraper.report_explorer import ReportExplorer
 
@@ -144,6 +145,13 @@ def scrape_report(
                         log.warning("  %s", error)
             except Exception:
                 log.exception("  Failed to store in database for %s", visual_name)
+
+    if to_firebase and to_database:
+        try:
+            snapshot = export_entities_snapshot()
+            mirror_entities(snapshot)
+        except Exception:
+            log.exception("Failed to mirror ER snapshot to Firebase")
 
     log.info(
         "Scrape complete. Total rows across all visuals: %d at %s",

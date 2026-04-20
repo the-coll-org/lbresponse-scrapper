@@ -15,6 +15,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     create_engine,
 )
 from sqlalchemy import (
@@ -126,6 +127,23 @@ class AidMatchStatus(StrEnum):
     PARTIAL = "partial"
 
 
+class ContactType(StrEnum):
+    PHONE = "phone"
+    WHATSAPP = "whatsapp"
+    EMAIL = "email"
+    TELEGRAM = "telegram"
+    SMS = "sms"
+    OTHER = "other"
+
+
+class CategoryType(StrEnum):
+    SECTOR = "sector"
+    SERVICE_SUBTYPE = "service_subtype"
+    NEED_TYPE = "need_type"
+    PROVIDER_TYPE = "provider_type"
+    SHELTER_TYPE = "shelter_type"
+
+
 # --- Models ---
 
 
@@ -134,13 +152,21 @@ class Provider(Base):
 
     provider_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     provider_name = Column(String(255), nullable=False)
+    provider_name_ar = Column(String(255), nullable=True)
     provider_type: Mapped[ProviderType] = mapped_column(
         SQLEnum(ProviderType, name="provider_type_enum"), nullable=False
     )
+    description = Column(Text, nullable=True)
+    description_ar = Column(Text, nullable=True)
     website = Column(String(255), nullable=True)
     contact_name = Column(String(255), nullable=False)
     contact_phone = Column(String(50), nullable=False)
+    contact_type: Mapped[ContactType | None] = mapped_column(
+        SQLEnum(ContactType, name="contact_type_enum"), nullable=True
+    )
     is_active = Column(Boolean, nullable=False, default=True)
+    pinned = Column(Boolean, nullable=False, default=False)
+    verified = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -157,18 +183,22 @@ class Service(Base):
     service_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     provider_id = Column(UUID(as_uuid=True), ForeignKey("providers.provider_id"), nullable=False)
     service_name = Column(String(255), nullable=False)
+    service_name_ar = Column(String(255), nullable=True)
     service_code = Column(String(50), nullable=True)
     sector: Mapped[Sector] = mapped_column(SQLEnum(Sector, name="sector_enum"), nullable=False)
     service_type: Mapped[ServiceSubtype | None] = mapped_column(
         SQLEnum(ServiceSubtype, name="service_subtype_enum"), nullable=True
     )
     description = Column(Text, nullable=True)
+    description_ar = Column(Text, nullable=True)
     aid_type: Mapped[AidType] = mapped_column(
         SQLEnum(AidType, name="aid_type_enum"), nullable=False
     )
     status: Mapped[ServiceStatus] = mapped_column(
         SQLEnum(ServiceStatus, name="service_status_enum"), nullable=False
     )
+    pinned = Column(Boolean, nullable=False, default=False)
+    verified = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
@@ -193,8 +223,11 @@ class Location(Base):
         SQLEnum(Governorate, name="governorate_enum"), nullable=False
     )
     city = Column(String(100), nullable=False)
+    city_ar = Column(String(100), nullable=True)
     district = Column(String(100), nullable=True)
+    district_ar = Column(String(100), nullable=True)
     locality = Column(String(255), nullable=True)
+    locality_ar = Column(String(255), nullable=True)
     longitude = Column(Float, nullable=True)
     latitude = Column(Float, nullable=True)
     accessibility: Mapped[Accessibility] = mapped_column(
@@ -241,6 +274,7 @@ class Shelter(Base):
 
     shelter_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     shelter_name = Column(String(255), nullable=False)
+    shelter_name_ar = Column(String(255), nullable=True)
     shelter_type: Mapped[ShelterType] = mapped_column(
         SQLEnum(ShelterType, name="shelter_type_enum"), nullable=False
     )
@@ -257,6 +291,11 @@ class Shelter(Base):
     )
     contact_name = Column(String(255), nullable=True)
     contact_phone = Column(String(50), nullable=True)
+    contact_type: Mapped[ContactType | None] = mapped_column(
+        SQLEnum(ContactType, name="contact_type_enum"), nullable=True
+    )
+    pinned = Column(Boolean, nullable=False, default=False)
+    verified = Column(Boolean, nullable=False, default=False)
     last_update: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
@@ -281,6 +320,7 @@ class ShelterNeed(Base):
     )
     people_in_need = Column(Integer, nullable=True)
     description = Column(Text, nullable=True)
+    description_ar = Column(Text, nullable=True)
     reported_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     status: Mapped[ShelterNeedStatus] = mapped_column(
         SQLEnum(ShelterNeedStatus, name="shelter_need_status_enum"), nullable=False
@@ -317,6 +357,25 @@ class AidMatch(Base):
 
     def __repr__(self):
         return f"<AidMatch {self.id}>"
+
+
+class Category(Base):
+    """Bilingual display labels for enum values (sector, service_type, need_type, etc.)."""
+
+    __tablename__ = "categories"
+    __table_args__ = (UniqueConstraint("category_type", "key", name="uq_category_type_key"),)
+
+    category_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    category_type: Mapped[CategoryType] = mapped_column(
+        SQLEnum(CategoryType, name="category_type_enum"), nullable=False
+    )
+    key = Column(String(100), nullable=False)
+    en_label = Column(String(255), nullable=False)
+    ar_label = Column(String(255), nullable=True)
+    sort_order = Column(Integer, nullable=False, default=0)
+
+    def __repr__(self):
+        return f"<Category {self.category_type}:{self.key}>"
 
 
 # --- Database management ---
