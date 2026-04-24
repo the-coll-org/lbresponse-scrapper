@@ -94,6 +94,8 @@ def mirror_entities(snapshot: dict[str, dict]) -> dict[str, int]:
     now = datetime.now(UTC).isoformat()
     counts: dict[str, int] = {}
 
+    _denormalize_provider_locations(snapshot)
+
     entities_root = rtdb.reference("entities")
     for entity_type, records in snapshot.items():
         if entity_type == "categories":
@@ -127,6 +129,33 @@ def mirror_entities(snapshot: dict[str, dict]) -> dict[str, int]:
 
     log.info("Mirrored ER snapshot to Firebase: %s", counts)
     return counts
+
+
+def _denormalize_provider_locations(snapshot: dict[str, dict]) -> None:
+    """Attach a unique `location_ids` list to each provider via services + availabilities."""
+    providers = snapshot.get("providers") or {}
+    services = snapshot.get("services") or {}
+    availabilities = snapshot.get("service_availability") or {}
+    if not (providers and services and availabilities):
+        return
+
+    service_locations: dict[str, set[str]] = {}
+    for av in availabilities.values():
+        sid, lid = av.get("service_id"), av.get("location_id")
+        if sid and lid:
+            service_locations.setdefault(str(sid), set()).add(str(lid))
+
+    provider_locations: dict[str, set[str]] = {}
+    for svc in services.values():
+        pid = svc.get("provider_id")
+        sid = svc.get("service_id")
+        if pid and sid:
+            provider_locations.setdefault(str(pid), set()).update(
+                service_locations.get(str(sid), ())
+            )
+
+    for pid, provider in providers.items():
+        provider["location_ids"] = sorted(provider_locations.get(str(pid), set()))
 
 
 def _sanitize_key(name: str) -> str:

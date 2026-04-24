@@ -161,6 +161,7 @@ class Provider(Base):
     website = Column(String(255), nullable=True)
     contact_name = Column(String(255), nullable=False)
     contact_phone = Column(String(50), nullable=False)
+    email = Column(String(255), nullable=True)
     contact_type: Mapped[ContactType | None] = mapped_column(
         SQLEnum(ContactType, name="contact_type_enum"), nullable=True
     )
@@ -168,6 +169,9 @@ class Provider(Base):
     pinned = Column(Boolean, nullable=False, default=False)
     verified = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     # Relationships
     services = relationship("Service", back_populates="provider", cascade="all, delete-orphan")

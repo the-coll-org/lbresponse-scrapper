@@ -88,6 +88,7 @@ def store_provider(provider_data: dict) -> Provider:
                 website=provider_data.get("website"),
                 contact_name=provider_data.get("contact_name", ""),
                 contact_phone=provider_data.get("contact_phone", ""),
+                email=provider_data.get("email"),
                 contact_type=provider_data.get("contact_type"),
                 is_active=provider_data.get("is_active", True),
                 pinned=provider_data.get("pinned", False),
@@ -102,6 +103,7 @@ def store_provider(provider_data: dict) -> Provider:
                 "website",
                 "contact_name",
                 "contact_phone",
+                "email",
                 "contact_type",
             ):
                 if provider_data.get(field) is not None:
@@ -471,11 +473,13 @@ _ENTITY_COLUMNS: dict[str, tuple[type, list[str]]] = {
             "website",
             "contact_name",
             "contact_phone",
+            "email",
             "contact_type",
             "is_active",
             "pinned",
             "verified",
             "created_at",
+            "updated_at",
         ],
     ),
     "services": (
