@@ -102,7 +102,11 @@ def mirror_entities(snapshot: dict[str, dict]) -> dict[str, int]:
             _sanitize_key(rid): {_sanitize_key(k): _clean_value(v) for k, v in rec.items()}
             for rid, rec in records.items()
         }
-        entities_root.child(entity_type).set(cleaned)
+        # Per-record update (not set on the parent) so manually written
+        # records (e.g. providers created via the API) survive each scrape.
+        # Trade-off: records deleted from Postgres are no longer purged here.
+        if cleaned:
+            entities_root.child(entity_type).update(cleaned)
         counts[entity_type] = len(cleaned)
 
     categories = snapshot.get("categories", {})
