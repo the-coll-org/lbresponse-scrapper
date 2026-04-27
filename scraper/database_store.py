@@ -71,7 +71,7 @@ def store_provider(provider_data: dict) -> Provider:
     """Store or update a provider record."""
     session = get_session()
     try:
-        provider = (
+        provider: Provider | None = (
             session.query(Provider)
             .filter_by(provider_name=provider_data.get("provider_name"))
             .first()
@@ -125,7 +125,7 @@ def store_service(service_data: dict, provider_id) -> Service:
     """Store or update a service record."""
     session = get_session()
     try:
-        service = (
+        service: Service | None = (
             session.query(Service)
             .filter_by(
                 service_name=service_data.get("service_name"),
@@ -268,7 +268,7 @@ def store_shelter(shelter_data: dict, location_id) -> Shelter:
     """Store or update a shelter record."""
     session = get_session()
     try:
-        shelter = (
+        shelter: Shelter | None = (
             session.query(Shelter).filter_by(shelter_name=shelter_data.get("shelter_name")).first()
         )
 
