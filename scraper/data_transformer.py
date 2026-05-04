@@ -1,8 +1,79 @@
 """Transform Power BI data to structured database format."""
 
 import logging
+import re
 from datetime import date, datetime
 from typing import Any
+
+_PHONE_LIKE_PATTERN = re.compile(r"^[\d\s\-\+\(\)]+$")
+
+# Phone candidate: optional +961 country code, then 6-9 digits with optional separators.
+# Lookarounds prevent matching inside longer digit runs (timestamps, IDs).
+_LB_PHONE_CANDIDATE = re.compile(
+    r"(?<!\d)(?:\+?961[\s\-]?)?\d(?:[\s\-./]?\d){5,8}(?!\d)"
+)
+
+
+def is_valid_lebanese_phone(text: str) -> bool:
+    """Return True if the digits read like a Lebanese phone number.
+
+    Lebanese phones are 7-8 digits including the leading area-code zero.
+    Strips an optional +961 country code. Rejects all-zero / single-digit
+    repeats (e.g. '0000', '00-000000', '1111111').
+    """
+    if not isinstance(text, str):
+        return False
+    digits = re.sub(r"\D", "", text)
+    if digits.startswith("961"):
+        digits = digits[3:]
+    if not (7 <= len(digits) <= 8):
+        return False
+    if len(set(digits)) <= 1:
+        return False
+    if digits.startswith("00"):
+        return False
+    return True
+
+
+def extract_lebanese_phones_from_row(row: dict) -> list[str]:
+    """Scan all string values in a row for Lebanese-shaped phone numbers.
+
+    Recovers phones from misaligned source columns (e.g., when the labelled
+    `Phone` column actually contains a facility name and the real number is
+    in a sibling column). Returns unique values in first-seen order.
+    """
+    seen: set[str] = set()
+    out: list[str] = []
+    for value in row.values():
+        if not isinstance(value, str):
+            continue
+        for match in _LB_PHONE_CANDIDATE.finditer(value):
+            candidate = match.group(0).strip()
+            if not is_valid_lebanese_phone(candidate):
+                continue
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+            out.append(candidate)
+    return out
+
+
+def is_provider_name_valid(name: object) -> bool:
+    """Heuristic: True if the value plausibly identifies an organization.
+
+    Rejects empty strings, all-digit timestamps/IDs (length >= 10), and
+    phone-shaped strings. Must contain at least one alphabetic character.
+    """
+    if not isinstance(name, str):
+        return False
+    s = name.strip()
+    if not s:
+        return False
+    if s.isdigit() and len(s) >= 10:
+        return False
+    if _PHONE_LIKE_PATTERN.match(s):
+        return False
+    return any(c.isalpha() for c in s)
 
 from scraper.models import (
     Accessibility,
@@ -174,20 +245,22 @@ def _infer_governorate(value):
 
 def transform_provider_row(row: dict) -> dict:
     """Transform a Power BI provider row to database format."""
+    provider_name = _get(
+        row,
+        "provider_name",
+        "name",
+        "Partner",
+        "partner",
+        "Organization",
+        "organization",
+        "Concatenated Orgs 26",
+        "Funded By",
+        "Supported by Partner",
+    )
     return {
         "provider_id": row.get("provider_id"),
-        "provider_name": _get(
-            row,
-            "provider_name",
-            "name",
-            "Partner",
-            "partner",
-            "Organization",
-            "organization",
-            "Concatenated Orgs 26",
-            "Funded By",
-            "Supported by Partner",
-        ),
+        "provider_name": provider_name,
+        "is_name_valid": is_provider_name_valid(provider_name),
         "provider_type": infer_enum_value(
             _get(row, "provider_type", "type", "org_type", "PHC Ownership"),
             ProviderType,
@@ -203,14 +276,7 @@ def transform_provider_row(row: dict) -> dict:
             "Focal Point Contact",
             default="",
         ),
-        "contact_phone": _get(
-            row,
-            "contact_phone",
-            "phone",
-            "CONTACT: Primary Focal Point (phone number)",
-            "Phone",
-            default="",
-        ),
+        "contact_phone": ", ".join(extract_lebanese_phones_from_row(row)),
         "is_active": _parse_bool(_get(row, "is_active", "active", "status", default=True)),
     }
 

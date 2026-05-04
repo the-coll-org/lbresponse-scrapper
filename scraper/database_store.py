@@ -90,6 +90,7 @@ def store_provider(provider_data: dict) -> Provider:
                 contact_phone=provider_data.get("contact_phone", ""),
                 contact_type=provider_data.get("contact_type"),
                 is_active=provider_data.get("is_active", True),
+                is_name_valid=provider_data.get("is_name_valid", True),
                 pinned=provider_data.get("pinned", False),
                 verified=provider_data.get("verified", False),
             )
@@ -106,7 +107,7 @@ def store_provider(provider_data: dict) -> Provider:
             ):
                 if provider_data.get(field) is not None:
                     setattr(provider, field, provider_data[field])
-            for flag in ("is_active", "pinned", "verified"):
+            for flag in ("is_active", "is_name_valid", "pinned", "verified"):
                 if provider_data.get(flag) is not None:
                     setattr(provider, flag, provider_data[flag])
 
@@ -473,6 +474,7 @@ _ENTITY_COLUMNS: dict[str, tuple[type, list[str]]] = {
             "contact_phone",
             "contact_type",
             "is_active",
+            "is_name_valid",
             "pinned",
             "verified",
             "created_at",

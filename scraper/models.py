@@ -165,6 +165,7 @@ class Provider(Base):
         SQLEnum(ContactType, name="contact_type_enum"), nullable=True
     )
     is_active = Column(Boolean, nullable=False, default=True)
+    is_name_valid = Column(Boolean, nullable=False, default=True)
     pinned = Column(Boolean, nullable=False, default=False)
     verified = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
