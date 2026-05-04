@@ -6,6 +6,7 @@ import logging
 import os
 import time
 from datetime import UTC, datetime
+from uuid import uuid4
 
 import schedule
 
@@ -20,13 +21,11 @@ from scraper.database_store import export_entities_snapshot
 from scraper.dsr_parser import extract_select_names, parse_dsr_response
 from scraper.embed_url import parse_embed_url, resolve_cluster_url
 from scraper.firebase_store import clear_visual_data, mirror_entities, store_visual_data
+from scraper.logging_config import scrape_id_var, setup_logging
 from scraper.query_builder import build_query_payload
 from scraper.report_explorer import ReportExplorer
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
+setup_logging()
 log = logging.getLogger("powerbi-scraper")
 
 
@@ -173,18 +172,23 @@ def _export_csv(visual_name: str, rows: list[dict]):
 
 
 def run_once(args):
-    scrape_report(
-        embed_url=args.url,
-        to_firebase=not args.no_firebase,
-        to_csv=args.csv,
-        to_database=not args.no_database,
-    )
+    token = scrape_id_var.set(str(uuid4()))
+    try:
+        scrape_report(
+            embed_url=args.url,
+            to_firebase=not args.no_firebase,
+            to_csv=args.csv,
+            to_database=not args.no_database,
+        )
+    finally:
+        scrape_id_var.reset(token)
 
 
 def run_scheduled(args):
     interval = args.interval or SCHEDULE_INTERVAL_HOURS
 
     def job():
+        token = scrape_id_var.set(str(uuid4()))
         try:
             scrape_report(
                 embed_url=args.url,
@@ -194,6 +198,8 @@ def run_scheduled(args):
             )
         except Exception:
             log.exception("Scrape failed")
+        finally:
+            scrape_id_var.reset(token)
 
     log.info("Running initial scrape...")
     job()

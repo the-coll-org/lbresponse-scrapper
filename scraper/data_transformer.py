@@ -58,6 +58,37 @@ def extract_lebanese_phones_from_row(row: dict) -> list[str]:
     return out
 
 
+_WHATSAPP_LINK_RE = re.compile(
+    r"(?:wa\.me/|api\.whatsapp\.com/send\?phone=|whatsapp\.com/(?:send\?phone=)?)\+?(\d+)",
+    re.IGNORECASE,
+)
+_WHATSAPP_LABEL_RE = re.compile(
+    r"(?:whatsapp|واتساب|واتس\s?اب)\D{0,8}(\+?9?6?1?[\s\-./]?\d(?:[\s\-./]?\d){5,8})",
+    re.IGNORECASE,
+)
+
+
+def extract_lebanese_whatsapp_from_row(row: dict) -> str | None:
+    """Extract a Lebanese WhatsApp number from any cell in the row.
+
+    Looks for wa.me / whatsapp.com links and "whatsapp <number>" / "واتساب
+    <رقم>" mentions. Returns the first valid Lebanese phone found.
+    """
+    for value in row.values():
+        if not isinstance(value, str):
+            continue
+        link = _WHATSAPP_LINK_RE.search(value)
+        if link:
+            digits = link.group(1)
+            normalized = "0" + digits[3:] if digits.startswith("961") else digits
+            if is_valid_lebanese_phone(normalized):
+                return normalized
+        labelled = _WHATSAPP_LABEL_RE.search(value)
+        if labelled and is_valid_lebanese_phone(labelled.group(1)):
+            return labelled.group(1).strip()
+    return None
+
+
 def is_provider_name_valid(name: object) -> bool:
     """Heuristic: True if the value plausibly identifies an organization.
 
@@ -277,6 +308,7 @@ def transform_provider_row(row: dict) -> dict:
             default="",
         ),
         "contact_phone": ", ".join(extract_lebanese_phones_from_row(row)),
+        "whatsapp": extract_lebanese_whatsapp_from_row(row),
         "is_active": _parse_bool(_get(row, "is_active", "active", "status", default=True)),
     }
 

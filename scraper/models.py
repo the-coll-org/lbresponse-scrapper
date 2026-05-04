@@ -161,6 +161,7 @@ class Provider(Base):
     website = Column(String(255), nullable=True)
     contact_name = Column(String(255), nullable=False)
     contact_phone = Column(String(50), nullable=False)
+    whatsapp = Column(String(50), nullable=True)
     contact_type: Mapped[ContactType | None] = mapped_column(
         SQLEnum(ContactType, name="contact_type_enum"), nullable=True
     )
