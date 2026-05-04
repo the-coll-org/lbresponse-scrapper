@@ -79,19 +79,13 @@ def setup_logging() -> None:
 
     fmt = os.getenv("LOG_FORMAT", "").lower()
     if not fmt:
-        fmt = (
-            "json"
-            if os.getenv("APP_ENV", "").lower() == "production"
-            else "text"
-        )
+        fmt = "json" if os.getenv("APP_ENV", "").lower() == "production" else "text"
 
     handler = logging.StreamHandler(sys.stdout)
     if fmt == "json":
         handler.setFormatter(JsonFormatter())
     else:
-        handler.setFormatter(
-            logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-        )
+        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
 
     root = logging.getLogger()
     for existing in list(root.handlers):

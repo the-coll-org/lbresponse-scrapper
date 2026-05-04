@@ -5,13 +5,30 @@ import re
 from datetime import date, datetime
 from typing import Any
 
+from scraper.models import (
+    Accessibility,
+    AgeGroup,
+    AidMatchStatus,
+    AidType,
+    GenderTarget,
+    Governorate,
+    ProviderType,
+    Sector,
+    ServiceStatus,
+    ServiceSubtype,
+    Severity,
+    ShelterNeedStatus,
+    ShelterStatus,
+    ShelterType,
+)
+
+log = logging.getLogger(__name__)
+
 _PHONE_LIKE_PATTERN = re.compile(r"^[\d\s\-\+\(\)]+$")
 
 # Phone candidate: optional +961 country code, then 6-9 digits with optional separators.
 # Lookarounds prevent matching inside longer digit runs (timestamps, IDs).
-_LB_PHONE_CANDIDATE = re.compile(
-    r"(?<!\d)(?:\+?961[\s\-]?)?\d(?:[\s\-./]?\d){5,8}(?!\d)"
-)
+_LB_PHONE_CANDIDATE = re.compile(r"(?<!\d)(?:\+?961[\s\-]?)?\d(?:[\s\-./]?\d){5,8}(?!\d)")
 
 
 def is_valid_lebanese_phone(text: str) -> bool:
@@ -30,9 +47,7 @@ def is_valid_lebanese_phone(text: str) -> bool:
         return False
     if len(set(digits)) <= 1:
         return False
-    if digits.startswith("00"):
-        return False
-    return True
+    return not digits.startswith("00")
 
 
 def extract_lebanese_phones_from_row(row: dict) -> list[str]:
@@ -105,25 +120,6 @@ def is_provider_name_valid(name: object) -> bool:
     if _PHONE_LIKE_PATTERN.match(s):
         return False
     return any(c.isalpha() for c in s)
-
-from scraper.models import (
-    Accessibility,
-    AgeGroup,
-    AidMatchStatus,
-    AidType,
-    GenderTarget,
-    Governorate,
-    ProviderType,
-    Sector,
-    ServiceStatus,
-    ServiceSubtype,
-    Severity,
-    ShelterNeedStatus,
-    ShelterStatus,
-    ShelterType,
-)
-
-log = logging.getLogger(__name__)
 
 
 def infer_enum_value(value: Any, enum_class, default=None):
