@@ -29,6 +29,21 @@ setup_logging()
 log = logging.getLogger("powerbi-scraper")
 
 
+def _is_allowed_visual(visual: dict) -> bool:
+    """Keep only the Service Mapping table and its slicers.
+
+    The Power BI report has many visuals (health pages, A3 matrices, pivot
+    tables, etc.) but the UI only consumes the canonical Service Mapping
+    table for organization rows and its sector slicer for the Type of
+    Service filter. Everything else is noise that pollutes the snapshot.
+    """
+    page = (visual.get("page") or "").strip().lower().replace("_", " ")
+    visual_type = (visual.get("visual_type") or "").strip()
+    if not page.startswith("service mapping"):
+        return False
+    return visual_type in {"tableEx", "slicer"}
+
+
 def scrape_report(
     embed_url: str,
     to_firebase: bool = True,
@@ -66,6 +81,12 @@ def scrape_report(
 
     visuals = explorer.get_queryable_visuals(schema_entities)
     log.info("Found %d queryable visuals", len(visuals))
+
+    visuals = [v for v in visuals if _is_allowed_visual(v)]
+    log.info(
+        "Filtered to %d allowed visual(s) on Service Mapping page",
+        len(visuals),
+    )
 
     total_rows = 0
     for i, visual in enumerate(visuals):
