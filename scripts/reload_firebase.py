@@ -40,12 +40,12 @@ from uuid import NAMESPACE_URL, uuid5
 # Allow `python scripts/reload_firebase.py` from the repo root.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scraper.data_transformer import (  # noqa: E402
+from scraper.data_transformer import (
     extract_lebanese_whatsapp_from_row,
     is_provider_name_valid,
     is_valid_lebanese_phone,
 )
-from scraper.logging_config import setup_logging  # noqa: E402
+from scraper.logging_config import setup_logging
 
 CSV_PATH = (
     Path(__file__).resolve().parent.parent
@@ -156,8 +156,7 @@ def aggregate(
                     "target_age_gender": clean(row.get("Targeted (Age/Gender)")),
                     "target_population": clean(row.get("Targeted Population Group")),
                     "accessible": (
-                        clean(row.get("Service accessible for persons with disabilities"))
-                        == "Yes"
+                        clean(row.get("Service accessible for persons with disabilities")) == "Yes"
                     ),
                 }
             ]
@@ -177,16 +176,12 @@ def aggregate(
     return by_group, sorted(sector_set), sorted(district_set)
 
 
-def to_record(
-    key: tuple[str, str], raw: dict, now_iso: str
-) -> tuple[str, dict]:
+def to_record(key: tuple[str, str], raw: dict, now_iso: str) -> tuple[str, dict]:
     org, district = key
     org_slug = slugify(org)
     district_slug = slugify(district)
     composite_slug = f"{org_slug}__{district_slug}"
-    provider_id = str(
-        uuid5(NAMESPACE_URL, f"lbresponse:provider:{composite_slug}")
-    )
+    provider_id = str(uuid5(NAMESPACE_URL, f"lbresponse:provider:{composite_slug}"))
     sectors_sorted = sorted(raw["sectors"])
     services_sorted = sorted(
         raw["services"],
@@ -239,7 +234,8 @@ def write_firebase(
     categories: dict[str, dict[str, dict]],
 ) -> None:
     import firebase_admin
-    from firebase_admin import credentials, db as rtdb
+    from firebase_admin import credentials
+    from firebase_admin import db as rtdb
 
     cred_path = os.getenv("FIREBASE_CRED_PATH")
     db_url = os.getenv("FIREBASE_DB_URL")
@@ -249,9 +245,7 @@ def write_firebase(
             "(loaded from .env). Aborting before any Firebase writes."
         )
     if not firebase_admin._apps:
-        firebase_admin.initialize_app(
-            credentials.Certificate(cred_path), {"databaseURL": db_url}
-        )
+        firebase_admin.initialize_app(credentials.Certificate(cred_path), {"databaseURL": db_url})
 
     log.info("Wiping entities/* and categories/* on %s", db_url)
     rtdb.reference("entities").delete()
@@ -309,9 +303,7 @@ def main():
     )
 
     now_iso = datetime.now(UTC).isoformat()
-    providers = dict(
-        to_record(key, raw, now_iso) for key, raw in raw_by_group.items()
-    )
+    providers = dict(to_record(key, raw, now_iso) for key, raw in raw_by_group.items())
     categories = build_categories(sectors, districts)
 
     sample_key = next(iter(providers))
